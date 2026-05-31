@@ -1,0 +1,63 @@
+import streamlit as st
+import streamlit.components.v1 as components
+st.title("💧⚡ ប្រព័ន្ធគណនាវិក្កយបត្រ ទឹក-អគ្គិសនី")
+st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃទឹកប្រាក់៖")
+st.divider()
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:")
+if id_user == "e20251016":
+    st.success("👤 ឈ្មោះអតិថិជន: Sok San")
+
+date_line = st.text_input("កាលបរិច្ឆេទ (Date Line):")
+st.divider()
+tab1, tab2 = st.tabs(["⚡ គណនាថ្លៃភ្លើង", "💧 គណនាថ្លៃទឹក"])
+with tab1:
+    st.header("ស្វែងរកថ្លៃអគ្គិសនី")
+    old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
+    new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
+    debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec") # ថែមប្រអប់បំណុលឡើងវិញ
+    
+    used_electric = new_num_electric - old_num_electric
+    
+    if st.button("គណនាថ្លៃអគ្គិសនី"):
+        st.subheader(f"📊 ថាមពលប្រើប្រាស់សរុប = {used_electric} kwh")
+        
+        if used_electric == 0:
+            st.session_state['total_electric'] = 500.0
+        else:
+            st.session_state['total_electric'] = (used_electric * 1000) + debt_electric
+            
+        st.info(f"💵 ទឹកប្រាក់ថ្លៃភ្លើងសរុប៖ {st.session_state['total_electric']} r")
+with tab2:
+    st.header("ស្វែងរកថ្លៃទឹកស្អាត")
+    old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
+    new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
+    
+    used_water = new_num_water - old_num_water
+    
+if st.button("Total"):
+        st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {used_water} ម៉ែត្រគូប (m³)")
+        
+        st.session_state['total_water'] = used_water * 1500
+        st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {st.session_state['total_water']} r")
+
+        total_money = st.session_state['total_water'] + st.session_state['total_electric']
+        st.success(f" Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} r")
+st.divider()
+print_btn = """
+<button onclick="window.print()" style="
+    background-color: #4CAF50; /* ពណ៌បៃតង */
+    border: none;
+    color: white;
+    padding: 10px 24px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: 'Khmer OS Battambang', sans-serif;
+">🖨️ ព្រីនវិក្កយបត្រ (Print)</button>
+"""
+
+components.html(print_btn, height=60)
