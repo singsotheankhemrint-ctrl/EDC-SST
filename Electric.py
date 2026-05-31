@@ -24,7 +24,7 @@ with tab1:
         if used_electric == 0:
             st.session_state['total_electric'] = 500.0
         else:
-            st.session_state['total_electric'] = (used_electric * 1000) + debt_electric
+            st.session_state['total_electric'] = (used_electric * 1000)
             
         st.info(f"💵 ទឹកប្រាក់ថ្លៃភ្លើងសរុប៖ {st.session_state['total_electric']} r")
 with tab2:
@@ -37,10 +37,10 @@ with tab2:
 if st.button("Total"):
         st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {used_water} ម៉ែត្រគូប (m³)")
         
-        st.session_state['total_water'] = used_water * 1500
+        st.session_state['total_water'] = used_water * 2000
         st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {st.session_state['total_water']} r")
 
-        total_money = st.session_state['total_water'] + st.session_state['total_electric']
+        total_money = st.session_state['total_water'] + st.session_state['total_electric']+ st.session_state['debt_electric']
         st.success(f" Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} r")
 st.divider()
 print_btn = """
