@@ -16,8 +16,6 @@ if id_user == "e20251016":
 date_line = st.text_input("កាលបរិច្ឆេទ (Date Line)៖")
 st.divider()
 
-tab1, tab2 = st.tabs(["⚡ គណនាថ្លៃអគ្គិសនី", "💧 គណនាថ្លៃទឹក"])
-with tab1:
     st.header("ថ្លៃសរុបថ្លៃអគ្គិសនី")
     old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
     new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
@@ -32,7 +30,7 @@ with tab1:
         else:
             st.session_state['total_electric'] = used_electric * 1000
         st.info(f"💵 ទឹកប្រាក់ថ្លៃភ្លើងសរុប៖ {st.session_state['total_electric']} ៛")
-with tab2:
+        
     st.header("ថ្លៃសរុបថ្លៃទឹកស្អាត")
     old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
     new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
