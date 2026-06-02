@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# --- កំណត់ទិន្នន័យគណនីសម្រាប់ Login (Username: Password) ---
+# --- កំណត់ទិន្នន័យគណនីសម្រាប់ Login ---
 USER_ACCOUNTS = {
     "admin": "admin123",
     "staff1": "staff123",
@@ -22,13 +22,13 @@ if 'total_electric' not in st.session_state:
 if 'total_water' not in st.session_state:
     st.session_state['total_water'] = 0
 
-# បង្កើតតម្លៃសម្រាប់ចាប់ទិន្នន័យលេខចាស់កុំឱ្យបាត់បង់
+# បង្កើតតម្លៃសម្រាប់រក្សាទុកលេខចាស់
 if 'elec_old_val' not in st.session_state:
     st.session_state['elec_old_val'] = 0
 if 'water_old_val' not in st.session_state:
     st.session_state['water_old_val'] = 0
 
-# បង្កើត key សម្រាប់គ្រប់គ្រងការ Reset ប្រអប់បញ្ចូលទិន្នន័យ
+# បង្កើត key សម្រាប់គ្រប់គ្រងការ Reset
 if 'input_key_suffix' not in st.session_state:
     st.session_state['input_key_suffix'] = 0
 
@@ -71,7 +71,7 @@ def delete_single_customer(user_id):
             pass
     return False
 
-# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់មកធ្វើជាលេខចាស់ខែថ្មី ---
+# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ (ស្កែនរកគ្រប់លក្ខខណ្ឌជួរឈរ) ---
 def get_last_utility_readings(user_id):
     last_electric_new = 0
     last_water_new = 0
@@ -80,20 +80,21 @@ def get_last_utility_readings(user_id):
             df = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
             df.columns = df.columns.str.strip()
             
-            # ស្វែងរកជួរឈរ User ID តាមឈ្មោះពិតប្រាកដក្នុង CSV របស់បង
+            # រកជួរឈរ ID 
             id_col = 'User ID' if 'User ID' in df.columns else (df.columns[1] if len(df.columns) > 1 else None)
             
             if id_col:
-                user_logs = df[df[id_col] == str(user_id)]
+                user_logs = df[df[id_col].str.strip() == str(user_id).strip()]
                 if not user_logs.empty:
                     latest_row = user_logs.iloc[-1] # យកជួរចុងក្រោយគេបង្អស់
                     
-                    # 💡 ផ្អែកតាមរូបថតតារាងរបស់បង ឈ្មោះជួរឈរគឺ "Electric New" និង "Water New"
+                    # ស្វែងរកតម្លៃ លេខភ្លើងថ្មី (Electric New)
                     if 'Electric New' in latest_row and pd.notna(latest_row['Electric New']):
                         last_electric_new = int(float(latest_row['Electric New']))
                     elif len(df.columns) > 5:
                         last_electric_new = int(float(latest_row.iloc[5]))
                         
+                    # ស្វែងរកតម្លៃ លេខទឹកថ្មី (Water New)
                     if 'Water New' in latest_row and pd.notna(latest_row['Water New']):
                         last_water_new = int(float(latest_row['Water New']))
                     elif len(df.columns) > 8:
@@ -144,16 +145,6 @@ def delete_single_log(timestamp):
             pass
     return False
 
-# 💡 អនុគមន៍ Callback ថ្មី៖ រត់ភ្លាមៗនៅពេលបងវាយ ID ចប់ ឬផ្លាស់ប្តូរ ID នៅក្នុងប្រអប់បញ្ចូល
-def update_old_values_callback():
-    id_key = f"id_{st.session_state['input_key_suffix']}"
-    if id_key in st.session_state:
-        current_id = st.session_state[id_key].strip()
-        if current_id:
-            e_old, w_old = get_last_utility_readings(current_id)
-            st.session_state['elec_old_val'] = e_old
-            st.session_state['water_old_val'] = w_old
-
 
 # =========================================================
 # 🔐 ផ្នែកប្រព័ន្ធ LOGIN
@@ -188,8 +179,7 @@ st.divider()
 suffix = st.session_state['input_key_suffix']
 
 # --- ផ្នែកព័ត៌មានអតិថិជន ---
-# 💡 បន្ថែម on_change=update_old_values_callback ដើម្បីទាញតម្លៃមកដាក់ភ្លាមៗពេលវាយ ID រួចរាល់
-id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}", on_change=update_old_values_callback).strip()
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}").strip()
 customer_name = ""
 
 if id_user:
@@ -197,6 +187,15 @@ if id_user:
     if existing_name:
         st.success(f"👤 ឈ្មោះអតិថិជន៖ {existing_name}")
         customer_name = existing_name
+        
+        # 💡 ដំណោះស្រាយពិសេស៖ បន្ថេមប៊ូតុងចុចទាញយកលេខចាស់ដោយផ្ទាល់ ធានាបានផល ១០០%
+        if st.button("🔄 ចុចត្រង់នេះដើម្បីទាញយក លេខចាស់ស្វ័យប្រវត្តិ"):
+            e_old, w_old = get_last_utility_readings(id_user)
+            st.session_state['elec_old_val'] = e_old
+            st.session_state['water_old_val'] = w_old
+            st.success(f"✅ ទាញយកជោគជ័យ! លេខភ្លើងចាស់={e_old}, លេខទឹកចាស់={w_old}")
+            st.rerun()
+            
     else:
         st.warning(f"⚠️ មិនទាន់មាន ID [{id_user}] នេះក្នុងប្រព័ន្ធទេ។")
         with st.form("customer_registration_form"):
