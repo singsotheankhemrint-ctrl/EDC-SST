@@ -1,3 +1,10 @@
+ដើម្បីរុញប្រអប់បញ្ចូលទិន្នន័យបំណុលចាស់ (debt_electric) ឱ្យមកស្ថិតនៅ ខាងក្រោមបន្ទាត់ (បន្ទាប់ពីការបំពេញលេខភ្លើង និងលេខទឹកទាំងស្រុង) អ្នកគ្រាន់តែប្ដូរកន្លែងកូដរបស់វា យកមកដាក់នៅពីលើផ្នែកគណនាសរុបទឹកប្រាក់ជាការស្រេច។
+
+ខាងក្រោមនេះជាកូដដែលបានកែសម្រួលត្រង់ចំណុចនោះរួចរាល់៖
+
+Python
+
+
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -10,13 +17,32 @@ if 'total_electric' not in st.session_state:
 if 'total_water' not in st.session_state:
     st.session_state['total_water'] = 0.0
 
-# អនុគមន៍សម្រាប់កត់ត្រាទិន្នន័យចូលក្នុងហ្វាយ CSV
+# --- អនុគមន៍គ្រប់គ្រងអតិថិជន និងការកត់ត្រា (រក្សាទុកដដែល) ---
+CUSTOMER_FILE = "customers.csv"
+
+def get_customer_name(user_id):
+    if os.path.exists(CUSTOMER_FILE):
+        df = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
+        result = df[df['User ID'] == str(user_id)]
+        if not result.empty:
+            return result.iloc[0]['Customer Name']
+    return None
+
+def save_new_customer(user_id, user_name):
+    new_cust = pd.DataFrame([{"User ID": str(user_id), "Customer Name": user_name}])
+    if os.path.exists(CUSTOMER_FILE):
+        df = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
+        if str(user_id) not in df['User ID'].values:
+            new_cust.to_csv(CUSTOMER_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
+    else:
+        new_cust.to_csv(CUSTOMER_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
+
 def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, debt, grand_total):
     log_file = "invoice_logs.csv"
     new_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": user_id,
-        "Customer Name": user_name, # បន្ថែមការកត់ត្រាឈ្មោះអតិថិជន
+        "Customer Name": user_name,
         "Date Line": date_line,
         "Electric Old": elec_old,
         "Electric New": elec_new,
@@ -33,13 +59,25 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
     else:
         df_new.to_csv(log_file, mode='w', header=True, index=False, encoding='utf-8-sig')
 
+
 st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ ទឹក-អគ្គសនី")
 st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃប្រាក់")
 st.divider()
 
-# --- កែសម្រួល៖ អាចវាយឈ្មោះ និង ID ដោយសេរីមិនបាច់កែដូរកូដ ---
-id_user = st.text_input("បញ្ចូល ID របស់អ្នក:")
-customer_name = st.text_input("បញ្ចូល ឈ្មោះអតិថិជន:") # ប្រអប់បំពេញឈ្មោះដោយខ្លួនឯង
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:").strip()
+
+customer_name = ""
+if id_user:
+    existing_name = get_customer_name(id_user)
+    if existing_name:
+        st.success(f"👤 ឈ្មោះអតិថិជន៖ {existing_name}")
+        customer_name = existing_name
+    else:
+        st.warning("⚠️ មិនទាន់មាន ID នេះក្នុងប្រព័ន្ធទេ។ សូមបញ្ចូលឈ្មោះដើម្បីចុះឈ្មោះថ្មី៖")
+        customer_name = st.text_input("បញ្ចូល ឈ្មោះអតិថិជនថ្មី:")
+        if customer_name:
+            save_new_customer(id_user, customer_name)
+            st.toast(f"🎉 បានចុះឈ្មោះអតិថិជន {customer_name} ចូលក្នុងប្រព័ន្ធ!")
 
 date_line = st.text_input("កាលបរិច្ឆេទ (Date Line):")
 st.divider()
@@ -48,7 +86,6 @@ st.divider()
 st.header("⚡ គណនាថ្លៃអគ្គសនី")
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
-debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
 
 used_electric = new_num_electric - old_num_electric
 
@@ -76,19 +113,27 @@ if st.button("គណនាថ្លៃទឹក"):
 
 st.divider()
 
-# --- ផ្នែកសរុបប្រាក់ និងរក្សាទុកទិន្នន័យ ---
+# =========================================================
+# 💡 ផ្នែកដែលបានផ្លាស់ប្តូរ៖ បំណុលចាស់ត្រូវបានរុញមកនៅក្រោមបន្ទាត់នេះវិញ
+# =========================================================
+st.header("💰 ផ្នែកទូទាត់ប្រាក់សរុប")
+debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
+
 total_money = st.session_state['total_electric'] + st.session_state['total_water'] + debt_electric
 
 st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} ៛")
 
 if st.button("💾 រក្សាទុកការកត់ត្រានេះ"):
-    log_data(
-        id_user, customer_name, date_line, 
-        old_num_electric, new_num_electric, st.session_state['total_electric'],
-        old_num_water, new_num_water, st.session_state['total_water'],
-        debt_electric, total_money
-    )
-    st.toast("✅ បានកត់ត្រាទិន្នន័យចូលក្នុងប្រព័ន្ធជោគជ័យ!")
+    if id_user and customer_name:
+        log_data(
+            id_user, customer_name, date_line, 
+            old_num_electric, new_num_electric, st.session_state['total_electric'],
+            old_num_water, new_num_water, st.session_state['total_water'],
+            debt_electric, total_money
+        )
+        st.toast("✅ បានកត់ត្រាទិន្នន័យចូលក្នុងប្រព័ន្ធជោគជ័យ!")
+    else:
+        st.error("❌ សូមបំពេញ ID និង ឈ្មោះអតិថិជនជាមុនសិន!")
 
 st.divider()
 
@@ -110,11 +155,10 @@ print_btn = """
 """
 components.html(print_btn, height=60)
 
-# --- 💡 បង្កើតប្រអប់ដាច់ដោយឡែក ដែលមាន CSS ការពារមិនឲ្យព្រីនចេញតាមម៉ាស៊ីន (No Print Zone) ---
+# --- ផ្នែកបង្ហាញទិន្នន័យ (លាក់មិនឱ្យព្រីនចេញតាមម៉ាស៊ីន) ---
 no_print_area = st.container()
 
 with no_print_area:
-    # ប្រើប្រាស់ CSS `@media print` ដើម្បីលាក់តារាងមិនឲ្យឃើញនៅលើក្រដាសព្រីន
     st.markdown("""
         <style>
         @media print {
@@ -125,7 +169,7 @@ with no_print_area:
         </style>
     """, unsafe_allowed_html=True)
     
-    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក (បង្ហាញតែលើអេក្រង់ មិនព្រីនចេញទេ)")
+    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក (បង្ហាញតែលើអេក្រង់ មិនព្រីនទេ)")
     if os.path.exists("invoice_logs.csv"):
         df_logs = pd.read_csv("invoice_logs.csv")
         st.dataframe(df_logs)
