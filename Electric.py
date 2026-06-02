@@ -1,6 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd # បន្ថែម library នេះសម្រាប់គ្រប់គ្រងទិន្នន័យ CSV
+import pandas as pd
 import os
 from datetime import datetime
 
@@ -10,16 +10,13 @@ if 'total_electric' not in st.session_state:
 if 'total_water' not in st.session_state:
     st.session_state['total_water'] = 0.0
 
-# ---------------------------------------------------------
-# អនុគមន៍សម្រាប់កត់ត្រាទិន្នន័យចូលក្នុងហ្វាយ CSV (Data Logging Function)
-# ---------------------------------------------------------
-def log_data(user_id, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, debt, grand_total):
+# អនុគមន៍សម្រាប់កត់ត្រាទិន្នន័យចូលក្នុងហ្វាយ CSV
+def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, debt, grand_total):
     log_file = "invoice_logs.csv"
-    
-    # បង្កើតទិន្នន័យថ្មីមួយជួរ (Row)
     new_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": user_id,
+        "Customer Name": user_name, # បន្ថែមការកត់ត្រាឈ្មោះអតិថិជន
         "Date Line": date_line,
         "Electric Old": elec_old,
         "Electric New": elec_new,
@@ -30,24 +27,19 @@ def log_data(user_id, date_line, elec_old, elec_new, elec_total, water_old, wate
         "Debt (៛)": debt,
         "Grand Total (៛)": grand_total
     }
-    
-    # បំប្លែងទៅជា DataFrame
     df_new = pd.DataFrame([new_data])
-    
-    # បើសិនជាមានហ្វាយស្រាប់ វានឹងថែមបន្តកន្ទុយ បើមិនទាន់មានវាបង្កើតហ្វាយថ្មី
     if os.path.exists(log_file):
         df_new.to_csv(log_file, mode='a', header=False, index=False, encoding='utf-8-sig')
     else:
         df_new.to_csv(log_file, mode='w', header=True, index=False, encoding='utf-8-sig')
 
-
 st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ ទឹក-អគ្គសនី")
 st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃប្រាក់")
 st.divider()
 
-id_user = st.text_input("បញ្ចូល ID របស់អ្នក")
-if id_user == "e20251016":
-    st.success("👤 ឈ្មោះអតិថិជន៖ Sok San")
+# --- កែសម្រួល៖ អាចវាយឈ្មោះ និង ID ដោយសេរីមិនបាច់កែដូរកូដ ---
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:")
+customer_name = st.text_input("បញ្ចូល ឈ្មោះអតិថិជន:") # ប្រអប់បំពេញឈ្មោះដោយខ្លួនឯង
 
 date_line = st.text_input("កាលបរិច្ឆេទ (Date Line):")
 st.divider()
@@ -89,10 +81,9 @@ total_money = st.session_state['total_electric'] + st.session_state['total_water
 
 st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} ៛")
 
-# ប៊ូតុងសម្រាប់រក្សាទុកទិន្នន័យចូលក្នុងប្រព័ន្ធ (Data Logging Button)
 if st.button("💾 រក្សាទុកការកត់ត្រានេះ"):
     log_data(
-        id_user, date_line, 
+        id_user, customer_name, date_line, 
         old_num_electric, new_num_electric, st.session_state['total_electric'],
         old_num_water, new_num_water, st.session_state['total_water'],
         debt_electric, total_money
@@ -119,11 +110,24 @@ print_btn = """
 """
 components.html(print_btn, height=60)
 
-# --- ផ្នែកបង្ហាញទិន្នន័យដែលបានកត់ត្រាទុក (View Logs) ---
-st.divider()
-st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
-if os.path.exists("invoice_logs.csv"):
-    df_logs = pd.read_csv("invoice_logs.csv")
-    st.dataframe(df_logs) # បង្ហាញជាតារាងនៅលើ Streamlit App តែម្តង
-else:
-    st.info("មិនទាន់មានទិន្នន័យកត់ត្រានៅឡើយទេ។")
+# --- 💡 បង្កើតប្រអប់ដាច់ដោយឡែក ដែលមាន CSS ការពារមិនឲ្យព្រីនចេញតាមម៉ាស៊ីន (No Print Zone) ---
+no_print_area = st.container()
+
+with no_print_area:
+    # ប្រើប្រាស់ CSS `@media print` ដើម្បីលាក់តារាងមិនឲ្យឃើញនៅលើក្រដាសព្រីន
+    st.markdown("""
+        <style>
+        @media print {
+            div[data-testid="stVerticalBlock"] > div:last-child {
+                display: none !important;
+            }
+        }
+        </style>
+    """, unsafe_allowed_html=True)
+    
+    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក (បង្ហាញតែលើអេក្រង់ មិនព្រីនចេញទេ)")
+    if os.path.exists("invoice_logs.csv"):
+        df_logs = pd.read_csv("invoice_logs.csv")
+        st.dataframe(df_logs)
+    else:
+        st.info("មិនទាន់មានទិន្នន័យកត់ត្រានៅឡើយទេ។")
