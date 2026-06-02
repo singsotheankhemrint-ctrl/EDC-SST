@@ -18,13 +18,13 @@ date_line = st.text_input("កាលបរិច្ឆេទ (Date Line):")
 st.divider()
 
 # --- ផ្នែកទី ១៖ គណនាថ្លៃអគ្គសនី ---
-st.header("⚡ គណនាថ្លៃអគ្គសនី")
+st.header("⚡ ថ្លៃអគ្គសនី")
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
 
 used_electric = new_num_electric - old_num_electric
 
-if st.button("គណនាថ្លៃអគ្គសនី"):
+if st.button("ថ្លៃអគ្គសនី"):
     st.subheader(f"📊 ថាមពលប្រើប្រាស់សរុប = {used_electric} kWh")
     if used_electric <= 0:
         st.session_state['total_electric'] = 500.0
@@ -35,14 +35,14 @@ if st.button("គណនាថ្លៃអគ្គសនី"):
 st.divider()
 
 # --- ផ្នែកទី ២៖ គណនាថ្លៃទឹក ---
-st.header("💧 គណនាថ្លៃទឹកស្អាត")
+st.header("💧 ថ្លៃទឹកស្អាត")
 old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
 new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
 debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
 
 used_water = new_num_water - old_num_water
 
-if st.button("គណនាថ្លៃទឹក"):
+if st.button("ថ្លៃទឹក"):
     st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {used_water} ម៉ែត្រគូប (m³)")
     st.session_state['total_water'] = used_water * 2000
     st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {st.session_state['total_water']} ៛")
