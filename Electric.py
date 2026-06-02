@@ -33,7 +33,8 @@ def save_new_customer(user_id, user_name):
         return True
     return False
 
-def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, debt, grand_total):
+# បន្ថែម room_fee ទៅក្នុងមុខងារកត់ត្រាទុក CSV
+def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, room_fee, debt, grand_total):
     log_file = "invoice_logs.csv"
     new_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -46,6 +47,7 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
         "Water Old": water_old,
         "Water New": water_new,
         "Water Total (៛)": water_total,
+        "Room Fee (៛)": room_fee, # កត់ត្រាថ្លៃបន្ទប់
         "Debt (៛)": debt,
         "Grand Total (៛)": grand_total
     }
@@ -60,7 +62,7 @@ st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ 
 st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃប្រាក់")
 st.divider()
 
-# --- 🛠️ ផ្នែកកែសម្រួល៖ ប្រើប្រាស់ Form សម្រាប់គ្រប់គ្រងព័ត៌មានអតិថិជន ---
+# --- ផ្នែកគ្រប់គ្រងព័ត៌មានអតិថិជន ---
 st.subheader("👤 ព័ត៌មានអតិថិជន")
 id_user = st.text_input("បញ្ចូល ID របស់អ្នក:").strip()
 
@@ -72,7 +74,6 @@ if id_user:
         customer_name = existing_name
     else:
         st.warning(f"⚠️ មិនទាន់មាន ID [{id_user}] នេះក្នុងប្រព័ន្ធទេ។ សូមបំពេញទម្រង់ខាងក្រោមដើម្បីចុះឈ្មោះ៖")
-        # ប្រើប្រាស់ st.form ដើម្បីកុំឱ្យវា Rerun ពេលកំពុងវាយឈ្មោះ
         with st.form("customer_registration_form"):
             new_name = st.text_input("បញ្ចូល ឈ្មោះអតិថិជនថ្មី:")
             submit_reg = st.form_submit_button("💾 ចុះឈ្មោះអតិថិជនថ្មី")
@@ -119,13 +120,15 @@ if st.button("គណនាថ្លៃទឹក"):
 
 st.divider()
 
-# --- ផ្នែកទូទាត់ប្រាក់សរុប និង បំណុល ---
-st.header("💰 ផ្នែកទូទាត់ប្រាក់សរុប")
+# --- 🛠️ ផ្នែកកែសម្រួល៖ បន្ថែម ថ្លៃបន្ទប់ នៅក្បែរបំណុលចាស់ ---
+st.header("💰 ទូទាត់ប្រាក់សរុប")
+room_fee = st.number_input("ថ្លៃបន្ទប់ (រៀល) =", value=0.0, key="room_fee") # ប៊ូតុងថ្មី
 debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
 
-total_money = st.session_state['total_electric'] + st.session_state['total_water'] + debt_electric
+# បូកបញ្ចូលថ្លៃបន្ទប់ទៅក្នុងលុយសរុប
+total_money = st.session_state['total_electric'] + st.session_state['total_water'] + room_fee + debt_electric
 
-st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} ៛")
+st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងថ្លៃបន្ទប់ និងបំណុល)៖ {total_money} ៛")
 
 if st.button("💾 រក្សាទុកការកត់ត្រានេះ"):
     if id_user and customer_name:
@@ -133,7 +136,7 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
             id_user, customer_name, date_line, 
             old_num_electric, new_num_electric, st.session_state['total_electric'],
             old_num_water, new_num_water, st.session_state['total_water'],
-            debt_electric, total_money
+            room_fee, debt_electric, total_money # បញ្ជូនតម្លៃថ្លៃបន្ទប់ទៅរក្សាទុក
         )
         st.toast("✅ បានកត់ត្រាទិន្នន័យចូលក្នុងប្រព័ន្ធជោគជ័យ!")
     else:
@@ -163,7 +166,7 @@ components.html(print_btn, height=60)
 no_print_area = st.container()
 with no_print_area:
     st.html("<style>@media print { div[data-testid='stVerticalBlock'] > div:last-child { display: none !important; } }</style>")
-    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក (បង្ហាញតែលើអេក្រង់ មិនព្រីនទេ)")
+    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក )")
     if os.path.exists("invoice_logs.csv"):
         df_logs = pd.read_csv("invoice_logs.csv")
         st.dataframe(df_logs)
