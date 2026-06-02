@@ -27,8 +27,6 @@ if 'elec_old_val' not in st.session_state:
     st.session_state['elec_old_val'] = 0
 if 'water_old_val' not in st.session_state:
     st.session_state['water_old_val'] = 0
-if 'last_checked_id' not in st.session_state:
-    st.session_state['last_checked_id'] = ""
 
 # បង្កើត key សម្រាប់គ្រប់គ្រងការ Reset ប្រអប់បញ្ចូលទិន្នន័យ
 if 'input_key_suffix' not in st.session_state:
@@ -73,41 +71,33 @@ def delete_single_customer(user_id):
             pass
     return False
 
-# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ (កែសម្រួលច្បាស់លាស់បំផុត) ---
+# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់មកធ្វើជាលេខចាស់ខែថ្មី ---
 def get_last_utility_readings(user_id):
     last_electric_new = 0
     last_water_new = 0
     if os.path.exists(LOG_FILE):
         try:
-            # អានឯកសារដោយបង្ខំឱ្យទៅជា String និងរំលងជួរដែលខូច
             df = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
-            
-            # សំអាតឈ្មោះជួរឈរ (Columns) កុំឱ្យមានដកឃ្លាធ្លាយ
             df.columns = df.columns.str.strip()
             
-            # ស្វែងរកជួរឈរអតិថិជន
-            id_col = None
-            if 'User ID' in df.columns:
-                id_col = 'User ID'
-            elif len(df.columns) > 1:
-                id_col = df.columns[1] # ជួរឈរទី ២ ជា User ID
+            # ស្វែងរកជួរឈរ User ID តាមឈ្មោះពិតប្រាកដក្នុង CSV របស់បង
+            id_col = 'User ID' if 'User ID' in df.columns else (df.columns[1] if len(df.columns) > 1 else None)
             
             if id_col:
                 user_logs = df[df[id_col] == str(user_id)]
                 if not user_logs.empty:
-                    latest_row = user_logs.iloc[-1] # យកទិន្នន័យចុងក្រោយគេបង្អស់
+                    latest_row = user_logs.iloc[-1] # យកជួរចុងក្រោយគេបង្អស់
                     
-                    # ស្វែងរកតម្លៃ លេខភ្លើងថ្មី (Electric New)
+                    # 💡 ផ្អែកតាមរូបថតតារាងរបស់បង ឈ្មោះជួរឈរគឺ "Electric New" និង "Water New"
                     if 'Electric New' in latest_row and pd.notna(latest_row['Electric New']):
                         last_electric_new = int(float(latest_row['Electric New']))
                     elif len(df.columns) > 5:
-                        last_electric_new = int(float(latest_row.iloc[5])) # ទីតាំងជួរឈរទី ៦
+                        last_electric_new = int(float(latest_row.iloc[5]))
                         
-                    # ស្វែងរកតម្លៃ លេខទឹកថ្មី (Water New)
                     if 'Water New' in latest_row and pd.notna(latest_row['Water New']):
                         last_water_new = int(float(latest_row['Water New']))
                     elif len(df.columns) > 8:
-                        last_water_new = int(float(latest_row.iloc[8])) # ទីតាំងជួរឈរទី ៩
+                        last_water_new = int(float(latest_row.iloc[8]))
         except Exception:
             pass
     return last_electric_new, last_water_new
@@ -154,6 +144,16 @@ def delete_single_log(timestamp):
             pass
     return False
 
+# 💡 អនុគមន៍ Callback ថ្មី៖ រត់ភ្លាមៗនៅពេលបងវាយ ID ចប់ ឬផ្លាស់ប្តូរ ID នៅក្នុងប្រអប់បញ្ចូល
+def update_old_values_callback():
+    id_key = f"id_{st.session_state['input_key_suffix']}"
+    if id_key in st.session_state:
+        current_id = st.session_state[id_key].strip()
+        if current_id:
+            e_old, w_old = get_last_utility_readings(current_id)
+            st.session_state['elec_old_val'] = e_old
+            st.session_state['water_old_val'] = w_old
+
 
 # =========================================================
 # 🔐 ផ្នែកប្រព័ន្ធ LOGIN
@@ -188,18 +188,9 @@ st.divider()
 suffix = st.session_state['input_key_suffix']
 
 # --- ផ្នែកព័ត៌មានអតិថិជន ---
-id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}").strip()
+# 💡 បន្ថែម on_change=update_old_values_callback ដើម្បីទាញតម្លៃមកដាក់ភ្លាមៗពេលវាយ ID រួចរាល់
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}", on_change=update_old_values_callback).strip()
 customer_name = ""
-
-# ប្រព័ន្ធចាប់ទិន្នន័យស្វ័យប្រវត្តនៅពេលវាយ ID រួចរាល់
-if id_user and id_user != st.session_state['last_checked_id']:
-    existing_name = get_customer_name(id_user)
-    if existing_name:
-        e_old, w_old = get_last_utility_readings(id_user)
-        st.session_state['elec_old_val'] = e_old
-        st.session_state['water_old_val'] = w_old
-        st.session_state['last_checked_id'] = id_user
-        st.rerun()
 
 if id_user:
     existing_name = get_customer_name(id_user)
@@ -263,7 +254,6 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
         st.session_state['total_water'] = 0
         st.session_state['elec_old_val'] = 0
         st.session_state['water_old_val'] = 0
-        st.session_state['last_checked_id'] = ""
         st.session_state['input_key_suffix'] += 1 
         st.rerun()
     else:
@@ -309,7 +299,6 @@ with no_print_area:
                             st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
                             st.session_state['elec_old_val'] = 0
                             st.session_state['water_old_val'] = 0
-                            st.session_state['last_checked_id'] = ""
                             st.rerun()
                     else:
                         st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
