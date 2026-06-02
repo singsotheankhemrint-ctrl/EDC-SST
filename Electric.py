@@ -12,7 +12,7 @@ USER_ACCOUNTS = {
 }
 ADMIN_PASSWORD = "admin123" # ពាក្យសម្ងាត់សម្រាប់អនុញ្ញាតឱ្យលុបទិន្នន័យ
 
-# --- បង្កើត Session State សម្រាប់រក្សាទុកស្ថានភាព Login ---
+# --- បង្កើត Session State សម្រាប់រក្សាទុកតម្លៃបណ្តោះអាសន្ន ---
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'current_user' not in st.session_state:
@@ -50,7 +50,6 @@ def save_new_customer(user_id, user_name):
     else:
         new_cust.to_csv(CUSTOMER_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
 
-# --- 💡 អនុគមន៍លុបអតិថិជនម្តងម្នាក់តាម ID ---
 def delete_single_customer(user_id):
     if os.path.exists(CUSTOMER_FILE):
         try:
@@ -91,7 +90,6 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
     else:
         df_new.to_csv(LOG_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
 
-# --- 💡 អនុគមន៍លុបប្រវត្តិកត់ត្រាម្តងមួយជួរ តាមរយៈទិន្នន័យពេលវេលា (Timestamp) ---
 def delete_single_log(timestamp):
     if os.path.exists(LOG_FILE):
         try:
@@ -105,7 +103,7 @@ def delete_single_log(timestamp):
 
 
 # =========================================================
-# 🔐 ផ្នែក LOGIN 
+# 🔐 ផ្នែកប្រព័ន្ធ LOGIN
 # =========================================================
 if not st.session_state['logged_in']:
     st.subheader("🔐 សូមចូលប្រើប្រាស់ប្រព័ន្ធ (Login)")
@@ -122,6 +120,7 @@ if not st.session_state['logged_in']:
             st.error("❌ ឈ្មោះគណនី ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
     st.stop()
 
+# បង្ហាញឈ្មោះអ្នកប្រើប្រាស់ និងប៊ូតុងចាកចេញនៅលើ Sidebar
 st.sidebar.write(f"👤 គណនី៖ **{st.session_state['current_user']}**")
 if st.sidebar.button("🚪 ចាកចេញ (Logout)"):
     st.session_state['logged_in'] = False
@@ -130,16 +129,16 @@ if st.sidebar.button("🚪 ចាកចេញ (Logout)"):
 
 
 # =========================================================
-# 🍏 ផ្នែកកម្មវិធីគណនា
+# 🍏 ផ្នែកកម្មវិធីចម្បង (រក្សាទម្រង់ Tabs ដើមរបស់អ្នក)
 # =========================================================
 st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ ទឹក-អគ្គសនី")
 st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃប្រាក់")
 st.divider()
 
-st.subheader("👤 ព័ត៌មានអតិថិជន")
-id_user = st.text_input("បញ្ចូល ID របស់អ្នក:").strip()
-
+# --- ផ្នែកព័ត៌មានអតិថិជន ---
+id_user = st.text_input("បញ្ចូល ID របស់អ្នក:")
 customer_name = ""
+
 if id_user:
     existing_name = get_customer_name(id_user)
     if existing_name:
@@ -162,31 +161,39 @@ if id_user:
 date_line = st.text_input("កាលបរិច្ឆេទ (Date Line):")
 st.divider()
 
-# --- ផ្នែកគណនាភ្លើង និងទឹក ---
-st.header("⚡ គណនាថ្លៃអគ្គសនី")
-old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
-new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
-used_electric = new_num_electric - old_num_electric
+# --- ការបែងចែក Tabs គណនាភ្លើង និងទឹក ---
+tab1, tab2 = st.tabs(["⚡ គណនាថ្លៃអគ្គសនី", "💧 គណនាថ្លៃទឹក"])
 
-if st.button("គណនាថ្លៃអគ្គសនី"):
-    st.subheader(f"📊 ថាមពលប្រើប្រាស់សរុប = {used_electric} kWh")
-    st.session_state['total_electric'] = 500.0 if used_electric <= 0 else used_electric * 1000
-    st.info(f"💵 ទឹកប្រាក់ថ្លៃភ្លើងសរុប៖ {st.session_state['total_electric']} ៛")
+with tab1:
+    st.header("ផ្ទះសរុបថ្លៃអគ្គសនី")
+    old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
+    new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
+    
+    used_electric = new_num_electric - old_num_electric
+    
+    if st.button("គណនាថ្លៃអគ្គសនី"):
+        st.subheader(f"📊 ថាមពលប្រើប្រាស់សរុប = {used_electric} kwh")
+        if used_electric <= 0:
+            st.session_state['total_electric'] = 500.0
+        else:
+            st.session_state['total_electric'] = used_electric * 1000
+        st.info(f"💵 ទឹកប្រាក់ថ្លៃភ្លើងសរុប៖ {st.session_state['total_electric']} ៛")
+
+with tab2:
+    st.header("ថ្លៃសរុបថ្លៃទឹកស្អាត")
+    old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
+    new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
+    
+    used_water = new_num_water - old_num_water
+    
+    if st.button("គណនាថ្លៃទឹក"):
+        st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {used_water} ម៉ែត្រគូប (m³)")
+        st.session_state['total_water'] = used_water * 2000
+        st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {st.session_state['total_water']} ៛")
 
 st.divider()
 
-st.header("💧 គណនាថ្លៃទឹកស្អាត")
-old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
-new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
-used_water = new_num_water - old_num_water
-
-if st.button("គណនាថ្លៃទឹក"):
-    st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {used_water} m³")
-    st.session_state['total_water'] = used_water * 2000
-    st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {st.session_state['total_water']} ៛")
-
-st.divider()
-
+# --- ផ្នែកទូទាត់ប្រាក់រួមបញ្ចូល ថ្លៃបន្ទប់ និងប្រាក់ជំពាក់ ---
 st.header("💰 ផ្នែកទូទាត់ប្រាក់សរុប")
 room_fee = st.number_input("ថ្លៃបន្ទប់ (រៀល) =", value=0.0, key="room_fee")
 debt_electric = st.number_input("ប្រាក់ជំពាក់ (រៀល) =", value=0.0, key="debt_elec")
@@ -196,19 +203,31 @@ st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ង�
 
 if st.button("💾 រក្សាទុកការកត់ត្រានេះ"):
     if id_user and customer_name:
-        log_data(id_user, customer_name, date_line, old_num_electric, new_num_electric, st.session_state['total_electric'], old_num_water, new_num_water, st.session_state['total_water'], room_fee, debt_electric, total_money, st.session_state['current_user'])
-        st.toast("✅ បានកត់ត្រាទិន្នន័យជោគជ័យ!")
+        log_data(
+            id_user, customer_name, date_line, 
+            old_num_electric, new_num_electric, st.session_state['total_electric'], 
+            old_num_water, new_num_water, st.session_state['total_water'], 
+            room_fee, debt_electric, total_money, st.session_state['current_user']
+        )
+        st.toast("✅ បានកត់ត្រាទិន្នន័យរួមបញ្ចូលគ្នារួចរាល់!")
     else:
-        st.error("❌ សូមប្រាកដថាបានបំពេញ ID និងចុះឈ្មោះអតិថិជនរួចរាល់។")
+        st.error("❌ សូមប្រាកដថាបានបញ្ចូល ID និងមានឈ្មោះអតិថិជនត្រឹមត្រូវ។")
 
 st.divider()
 
-print_btn = '<button onclick="window.parent.print()" style="background-color: #4CAF50; border: none; color: white; padding: 10px 24px; text-align: center; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;">Print វិក្កយបត្រ</button>'
+# --- ប៊ូតុង Print វិក្កយបត្រ ---
+print_btn = """
+<button onclick="window.parent.print()" style="
+    background-color: #4CAF50; border: none; color: white; padding: 10px 24px;
+    text-align: center; text-decoration: none; display: inline-block;
+    font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;
+">Print វិក្កយបត្រ</button>
+"""
 components.html(print_btn, height=60)
 
 
 # =========================================================
-# 🛠️ ផ្នែកគ្រប់គ្រងការលុបទិន្នន័យតាមផ្នែកនីមួយៗ (លាក់មិនឱ្យព្រីន)
+# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុបតាមផ្នែកដាច់ដោយឡែក (លាក់មិនឱ្យព្រីន)
 # =========================================================
 no_print_area = st.container()
 with no_print_area:
@@ -222,8 +241,8 @@ with no_print_area:
             df_logs = pd.read_csv(LOG_FILE)
             st.dataframe(df_logs)
             
-            # --- 🛠️ ផ្នែកលុបប្រវត្តិកត់ត្រាម្តងមួយៗ ---
-            st.write("🔧 **លុបប្រវត្តិកត់ត្រាណាមួយចោលដាច់ដោយឡែក៖**")
+            # ឡេបលលុបប្រវត្តិកត់ត្រាម្តងមួយជួរ
+            st.write("🔧 **ជ្រើសរើសលុបទិន្នន័យកត់ត្រាណាមួយចោល៖**")
             log_timestamps = df_logs['Timestamp'].tolist()
             selected_log = st.selectbox("ជ្រើសរើស ថ្ងៃខែខ្សែកត់ត្រា ដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + log_timestamps)
             
@@ -243,20 +262,20 @@ with no_print_area:
         
     st.divider()
     
-    # --- 🛠️ ផ្នែកបង្ហាញ និងលុបអតិថិជនម្តងម្នាក់ៗ ---
+    # ផ្នែកបង្ហាញ និងលុបអតិថិជនម្តងម្នាក់
     st.subheader("👥 បញ្ជីឈ្មោះអតិថិជនទាំងអស់")
     if os.path.exists(CUSTOMER_FILE):
         try:
             df_cust = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
             st.dataframe(df_cust)
             
-            st.write("🔧 **លុបអតិថិជនណាម្នាក់ចោលដាច់ដោយឡែក៖**")
+            st.write("🔧 **ជ្រើសរើសលុបអតិថិជនណាម្នាក់ចោល៖**")
             cust_ids = df_cust['User ID'].tolist()
             selected_cust = st.selectbox("ជ្រើសរើស ID អតិថិជនដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + cust_ids)
             
             if selected_cust != "--- សូមជ្រើសរើស ---":
                 current_name = df_cust[df_cust['User ID'] == selected_cust].iloc[0]['Customer Name']
-                st.info(f"អតិថិជនដែលបានជ្រើសរើស៖ ID: {selected_cust} | ឈ្មោះ: {current_name}")
+                st.info(f"អតិថិជន៖ ID: {selected_cust} | ឈ្មោះ: {current_name}")
                 
                 cust_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបអតិថិជននេះ៖", type="password", key="p_cust")
                 if st.button("🗑️ លុបអតិថិជននេះចោល"):
