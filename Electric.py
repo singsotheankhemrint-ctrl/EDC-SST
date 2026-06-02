@@ -21,7 +21,6 @@ st.divider()
 st.header("⚡ គណនាថ្លៃអគ្គសនី")
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
-debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
 
 used_electric = new_num_electric - old_num_electric
 
@@ -39,6 +38,7 @@ st.divider()
 st.header("💧 គណនាថ្លៃទឹកស្អាត")
 old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=0.0, key="old_water")
 new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0.0, key="new_water")
+debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")
 
 used_water = new_num_water - old_num_water
 
