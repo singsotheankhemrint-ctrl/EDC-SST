@@ -21,7 +21,7 @@ with tab1:
     st.header("ថ្លៃសរុបថ្លៃអគ្គិសនី")
     old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=0.0, key="old_elec")
     new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0.0, key="new_elec")
-    debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")  # ថែមប្រអប់បំណុលឡើងវិញ
+    debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0.0, key="debt_elec")  
 
     used_electric = new_num_electric - old_num_electric
 
@@ -48,7 +48,7 @@ total_money = st.session_state['total_electric'] + st.session_state['total_water
 
 st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ (រួមទាំងបំណុល)៖ {total_money} ៛")
 print_btn = """
-<button onclick="window.print()" style="
+<button onclick="window.parent.print()" style="
     background-color: #4CAF50; /* ពណ៌បៃតង */
     border: none;
     color: white;
