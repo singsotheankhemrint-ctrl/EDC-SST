@@ -227,6 +227,64 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
         )
         st.success("✅ បានកត់ត្រាទិន្នន័យរួចរាល់!")
         
+        st.session_state['total_electric'] = 0
+        st.session_state['total_water'] = 0
+        st.session_state['input_key_suffix'] += 1 
+        
+        st.rerun()
+    else:
+        st.error("❌ សូមប្រាកដថាបានបញ្ចូល ID និងមានឈ្មោះអតិថិជនត្រឹមត្រូវ។")
+
+st.divider()
+
+# --- ប៊ូតុង Print ---
+print_btn = """
+<button onclick="window.parent.print()" style="
+    background-color: #4CAF50; border: none; color: white; padding: 10px 24px;
+    text-align: center; text-decoration: none; display: inline-block;
+    font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;
+">Print វិក្កយបត្រ</button>
+"""
+components.html(print_btn, height=60)
+
+# =========================================================
+# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប
+# =========================================================
+no_print_area = st.container()
+with no_print_area:
+    st.html("<style>@media print { div[data-testid='stVerticalBlock'] > div:last-child { display: none !important; } }</style>")
+    st.divider()
+    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
+    
+    if os.path.exists(LOG_FILE):
+        try:
+            df_logs = pd.read_csv(LOG_FILE, on_bad_lines='skip')
+            st.dataframe(df_logs)
+            
+            st.write("🔧 **ជ្រើសរើសលុបទិន្នន័យកត់ត្រាណាមួយចោល៖**")
+            log_timestamps = df_logs['Timestamp'].tolist() if 'Timestamp' in df_logs.columns else []
+            selected_log = st.selectbox("ជ្រើសរើស ថ្ងៃខែខ្សែកត់ត្រា ដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + log_timestamps)
+            
+            if selected_log != "--- សូមជ្រើសរើស ---":
+                log_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបប្រវត្តិនេះ៖", type="password", key="p_log")
+                if st.button("🗑️ លុបប្រវត្តិនេះចោល"):
+                    if log_password == ADMIN_PASSWORD:
+                        if delete_single_log(selected_log):
+                            st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
+                            st.rerun()
+                    else:
+                        st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
+        except Exception:
+            st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាត។")
+    if id_user and customer_name:
+        log_data(
+            id_user, customer_name, date_line, 
+            old_num_electric, new_num_electric, st.session_state['total_electric'], 
+            old_num_water, new_num_water, st.session_state['total_water'], 
+            room_fee, parking_fee, total_money, st.session_state['current_user']
+        )
+        st.success("✅ បានកត់ត្រាទិន្នន័យរួចរាល់!")
+        
         # សំអាតតម្លៃចាស់ចោលដើម្បីរង់ចាំបញ្ចូល ID បន្ទាប់
         st.session_state['total_electric'] = 0
         st.session_state['total_water'] = 0
@@ -235,3 +293,4 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
         st.session_state['last_checked_id'] = ""
         st.session_state['input_key_suffix'] += 1 
         st.rerun()
+
