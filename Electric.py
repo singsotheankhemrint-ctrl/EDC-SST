@@ -73,33 +73,41 @@ def delete_single_customer(user_id):
             pass
     return False
 
-# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ មកធ្វើជាលេខចាស់ខែថ្មី ---
+# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ (កែសម្រួលច្បាស់លាស់បំផុត) ---
 def get_last_utility_readings(user_id):
     last_electric_new = 0
     last_water_new = 0
     if os.path.exists(LOG_FILE):
         try:
+            # អានឯកសារដោយបង្ខំឱ្យទៅជា String និងរំលងជួរដែលខូច
             df = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
+            
+            # សំអាតឈ្មោះជួរឈរ (Columns) កុំឱ្យមានដកឃ្លាធ្លាយ
             df.columns = df.columns.str.strip()
             
-            id_col = 'User ID' if 'User ID' in df.columns else (df.columns[1] if len(df.columns) > 1 else None)
+            # ស្វែងរកជួរឈរអតិថិជន
+            id_col = None
+            if 'User ID' in df.columns:
+                id_col = 'User ID'
+            elif len(df.columns) > 1:
+                id_col = df.columns[1] # ជួរឈរទី ២ ជា User ID
             
             if id_col:
                 user_logs = df[df[id_col] == str(user_id)]
                 if not user_logs.empty:
-                    latest_row = user_logs.iloc[-1]
+                    latest_row = user_logs.iloc[-1] # យកទិន្នន័យចុងក្រោយគេបង្អស់
                     
-                    # ស្វែងរកលេខភ្លើងថ្មីចុងក្រោយ
+                    # ស្វែងរកតម្លៃ លេខភ្លើងថ្មី (Electric New)
                     if 'Electric New' in latest_row and pd.notna(latest_row['Electric New']):
                         last_electric_new = int(float(latest_row['Electric New']))
                     elif len(df.columns) > 5:
-                        last_electric_new = int(float(latest_row.iloc[5]))
+                        last_electric_new = int(float(latest_row.iloc[5])) # ទីតាំងជួរឈរទី ៦
                         
-                    # ស្វែងរកលេខទឹកថ្មីចុងក្រោយ
+                    # ស្វែងរកតម្លៃ លេខទឹកថ្មី (Water New)
                     if 'Water New' in latest_row and pd.notna(latest_row['Water New']):
                         last_water_new = int(float(latest_row['Water New']))
                     elif len(df.columns) > 8:
-                        last_water_new = int(float(latest_row.iloc[8]))
+                        last_water_new = int(float(latest_row.iloc[8])) # ទីតាំងជួរឈរទី ៩
         except Exception:
             pass
     return last_electric_new, last_water_new
@@ -183,6 +191,7 @@ suffix = st.session_state['input_key_suffix']
 id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}").strip()
 customer_name = ""
 
+# ប្រព័ន្ធចាប់ទិន្នន័យស្វ័យប្រវត្តនៅពេលវាយ ID រួចរាល់
 if id_user and id_user != st.session_state['last_checked_id']:
     existing_name = get_customer_name(id_user)
     if existing_name:
@@ -274,7 +283,7 @@ components.html(print_btn, height=60)
 
 
 # =========================================================
-# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប (លាក់មិនឱ្យព្រីន)
+# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប
 # =========================================================
 no_print_area = st.container()
 with no_print_area:
@@ -298,8 +307,6 @@ with no_print_area:
                     if log_password == ADMIN_PASSWORD:
                         if delete_single_log(selected_log):
                             st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
-                            
-                            # សំអាត state បន្ទាប់ពីលុបភ្លាម ដើម្បីកុំឱ្យទិន្នន័យជាប់គាំង
                             st.session_state['elec_old_val'] = 0
                             st.session_state['water_old_val'] = 0
                             st.session_state['last_checked_id'] = ""
@@ -312,7 +319,6 @@ with no_print_area:
         st.info("មិនទាន់មានទិន្នន័យកត់ត្រានៅឡើយទេ។")
         
     st.divider()
-    
     st.subheader("👥 បញ្ជីឈ្មោះអតិថិជនទាំងអស់")
     if os.path.exists(CUSTOMER_FILE):
         try:
