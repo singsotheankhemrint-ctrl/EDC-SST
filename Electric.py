@@ -62,7 +62,18 @@ def save_new_customer(user_id, user_name):
     else:
         new_cust.to_csv(CUSTOMER_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
 
-# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ (អានតាមឈ្មោះជួរឈរ ឬតាមលំដាប់លំដាប់លំដោយកូដ) ---
+def delete_single_customer(user_id):
+    if os.path.exists(CUSTOMER_FILE):
+        try:
+            df = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
+            df = df[df['User ID'] != str(user_id)]
+            df.to_csv(CUSTOMER_FILE, index=False, encoding='utf-8-sig')
+            return True
+        except Exception:
+            pass
+    return False
+
+# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ មកធ្វើជាលេខចាស់ខែថ្មី ---
 def get_last_utility_readings(user_id):
     last_electric_new = 0
     last_water_new = 0
@@ -124,6 +135,17 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
     else:
         df_new.to_csv(LOG_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
 
+def delete_single_log(timestamp):
+    if os.path.exists(LOG_FILE):
+        try:
+            df = pd.read_csv(LOG_FILE, dtype=str)
+            df = df[df['Timestamp'] != timestamp]
+            df.to_csv(LOG_FILE, index=False, encoding='utf-8-sig')
+            return True
+        except Exception:
+            pass
+    return False
+
 
 # =========================================================
 # 🔐 ផ្នែកប្រព័ន្ធ LOGIN
@@ -142,6 +164,10 @@ if not st.session_state['logged_in']:
     st.stop()
 
 st.sidebar.write(f"👤 គណនី៖ **{st.session_state['current_user']}**")
+if st.sidebar.button("🚪 ចាកចេញ (Logout)"):
+    st.session_state['logged_in'] = False
+    st.session_state['current_user'] = ""
+    st.rerun()
 
 
 # =========================================================
@@ -157,7 +183,6 @@ suffix = st.session_state['input_key_suffix']
 id_user = st.text_input("បញ្ចូល ID របស់អ្នក:", key=f"id_{suffix}").strip()
 customer_name = ""
 
-# 🔥 យុទ្ធសាស្ត្រថ្មី៖ បើ ID មានការប្រែប្រួល ឱ្យទៅអូសទាញទិន្នន័យពីឯកសារចាស់ភ្លាមៗ
 if id_user and id_user != st.session_state['last_checked_id']:
     existing_name = get_customer_name(id_user)
     if existing_name:
@@ -165,7 +190,7 @@ if id_user and id_user != st.session_state['last_checked_id']:
         st.session_state['elec_old_val'] = e_old
         st.session_state['water_old_val'] = w_old
         st.session_state['last_checked_id'] = id_user
-        st.rerun() # បង្ខំឱ្យកម្មវិធី Refresh ទំព័រដើម្បីចាប់តម្លៃចូល Number Input ភ្លាម
+        st.rerun()
 
 if id_user:
     existing_name = get_customer_name(id_user)
@@ -185,7 +210,6 @@ st.divider()
 
 # --- ⚡ ផ្នែកគណនាថ្លៃអគ្គសនី ---
 st.header("⚡ គណនាថ្លៃអគ្គសនី")
-# តម្លៃចាស់ នឹងទាញចេញពី state ដែលយើងបានទាញពី file មករុញបញ្ចូលផ្ទាល់តែម្តង
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=int(st.session_state['elec_old_val']), step=1, format="%d", key=f"old_elec_{suffix}")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0, step=1, format="%d", key=f"new_elec_{suffix}")
 
@@ -198,7 +222,6 @@ st.divider()
 
 # --- 💧 ផ្នែកគណនាថ្លៃទឹក ---
 st.header("💧 គណនាថ្លៃទឹកស្អាត")
-# តម្លៃចាស់ ទឹកក៏ទាញចេញពី state ដូចគ្នា
 old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=int(st.session_state['water_old_val']), step=1, format="%d", key=f"old_water_{suffix}")
 new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0, step=1, format="%d", key=f"new_water_{suffix}")
 
@@ -229,8 +252,10 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
         
         st.session_state['total_electric'] = 0
         st.session_state['total_water'] = 0
+        st.session_state['elec_old_val'] = 0
+        st.session_state['water_old_val'] = 0
+        st.session_state['last_checked_id'] = ""
         st.session_state['input_key_suffix'] += 1 
-        
         st.rerun()
     else:
         st.error("❌ សូមប្រាកដថាបានបញ្ចូល ID និងមានឈ្មោះអតិថិជនត្រឹមត្រូវ។")
@@ -247,18 +272,20 @@ print_btn = """
 """
 components.html(print_btn, height=60)
 
+
 # =========================================================
-# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប
+# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប (លាក់មិនឱ្យព្រីន)
 # =========================================================
 no_print_area = st.container()
 with no_print_area:
     st.html("<style>@media print { div[data-testid='stVerticalBlock'] > div:last-child { display: none !important; } }</style>")
+    
     st.divider()
     st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
     
     if os.path.exists(LOG_FILE):
         try:
-            df_logs = pd.read_csv(LOG_FILE, on_bad_lines='skip')
+            df_logs = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
             st.dataframe(df_logs)
             
             st.write("🔧 **ជ្រើសរើសលុបទិន្នន័យកត់ត្រាណាមួយចោល៖**")
@@ -271,26 +298,42 @@ with no_print_area:
                     if log_password == ADMIN_PASSWORD:
                         if delete_single_log(selected_log):
                             st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
+                            
+                            # សំអាត state បន្ទាប់ពីលុបភ្លាម ដើម្បីកុំឱ្យទិន្នន័យជាប់គាំង
+                            st.session_state['elec_old_val'] = 0
+                            st.session_state['water_old_val'] = 0
+                            st.session_state['last_checked_id'] = ""
                             st.rerun()
                     else:
                         st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
         except Exception:
-            st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាត។")
-    if id_user and customer_name:
-        log_data(
-            id_user, customer_name, date_line, 
-            old_num_electric, new_num_electric, st.session_state['total_electric'], 
-            old_num_water, new_num_water, st.session_state['total_water'], 
-            room_fee, parking_fee, total_money, st.session_state['current_user']
-        )
-        st.success("✅ បានកត់ត្រាទិន្នន័យរួចរាល់!")
+            st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាតខ្លាំង។")
+    else:
+        st.info("មិនទាន់មានទិន្នន័យកត់ត្រានៅឡើយទេ។")
         
-        # សំអាតតម្លៃចាស់ចោលដើម្បីរង់ចាំបញ្ចូល ID បន្ទាប់
-        st.session_state['total_electric'] = 0
-        st.session_state['total_water'] = 0
-        st.session_state['elec_old_val'] = 0
-        st.session_state['water_old_val'] = 0
-        st.session_state['last_checked_id'] = ""
-        st.session_state['input_key_suffix'] += 1 
-        st.rerun()
-
+    st.divider()
+    
+    st.subheader("👥 បញ្ជីឈ្មោះអតិថិជនទាំងអស់")
+    if os.path.exists(CUSTOMER_FILE):
+        try:
+            df_cust = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
+            st.dataframe(df_cust)
+            
+            st.write("🔧 **ជ្រើសរើសលុបអតិថិជនណាម្នាក់ចោល៖**")
+            cust_ids = df_cust['User ID'].tolist()
+            selected_cust = st.selectbox("ជ្រើសរើស ID អតិថិជនដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + cust_ids)
+            
+            if selected_cust != "--- សូមជ្រើសរើស ---":
+                current_name = df_cust[df_cust['User ID'] == selected_cust].iloc[0]['Customer Name']
+                st.info(f"អតិថិជន៖ ID: {selected_cust} | ឈ្មោះ: {current_name}")
+                
+                cust_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបអតិថិជននេះ៖", type="password", key="p_cust")
+                if st.button("🗑️ លុបអតិថិជននេះចោល"):
+                    if cust_password == ADMIN_PASSWORD:
+                        if delete_single_customer(selected_cust):
+                            st.success(f"✅ បានលុបអតិថិជនរួចរាល់!")
+                            st.rerun()
+                    else:
+                        st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
+        except Exception:
+            st.error("⚠️ ឯកសារអតិថិជនមានទម្រង់ខូចខាត។")
