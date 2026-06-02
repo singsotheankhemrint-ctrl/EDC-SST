@@ -65,32 +65,47 @@ def delete_single_customer(user_id):
             pass
     return False
 
-# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ បំពេញចូលលេខចាស់ក្នុងរបាយការណ៍ថ្មី ---
+# --- 🛠️ មុខងារទាញយកលេខថ្មីពីរបាយការណ៍ចាស់ មកដាក់ចូលលេខចាស់ (កែប្រែវៃឆ្លាតបំផុត) ---
 def get_last_utility_readings(user_id):
     last_electric_new = 0
     last_water_new = 0
     if os.path.exists(LOG_FILE):
         try:
-            # ប្រើ on_bad_lines='skip' ដើម្បីការពារ ParserError ពីឯកសារចាស់ដែលខុសទម្រង់ជួរឈរ
-            df = pd.read_csv(LOG_FILE, dtype={'User ID': str}, on_bad_lines='skip')
+            # អានឯកសារដោយបង្ខំមិនឱ្យគាំង ទោះខូចទម្រង់ជួរឈរ (on_bad_lines='skip')
+            df = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
             
+            # ប្តូរឈ្មោះជួរឈរទាំងអស់ឱ្យទៅជាអក្សរគ្មានដកឃ្លា ដើម្បីងាយស្រួលរក
+            df.columns = df.columns.str.strip()
+            
+            # ស្វែងរកជួរឈរដែលជា ID (អាចឈ្មោះ 'User ID' ឬ ជួរឈរទី២)
+            id_col = None
             if 'User ID' in df.columns:
-                # ចម្រាញ់យកតែប្រវត្តិកត់ត្រារបស់អតិថិជន ID មួយនេះ
-                user_logs = df[df['User ID'] == str(user_id)]
+                id_col = 'User ID'
+            elif len(df.columns) > 1:
+                id_col = df.columns[1] # ជួរឈរទី២ ជាទូទៅគឺ User ID
                 
+            if id_col:
+                # ចម្រាញ់យកទិន្នន័យរបស់អតិថិជនម្នាក់នេះ
+                user_logs = df[df[id_col] == str(user_id)]
                 if not user_logs.empty:
-                    # យកជួរទិន្នន័យចុងក្រោយគេបង្អស់ (របាយការណ៍ចាស់ចុងក្រោយគេ)
+                    # យក قطار (Row) ចុងក្រោយបង្អស់របស់គាត់
                     latest_row = user_logs.iloc[-1]
                     
-                    # ទាញយកតម្លៃពីជួរឈរ "Electric New" នៃរបាយការណ៍ចាស់
+                    # ១. ស្វែងរកលេខភ្លើងថ្មី (Electric New)
                     if 'Electric New' in latest_row and pd.notna(latest_row['Electric New']):
                         last_electric_new = int(float(latest_row['Electric New']))
-                    
-                    # ទាញយកតម្លៃពីជួរឈរ "Water New" នៃរបាយការណ៍ចាស់
+                    elif len(df.columns) > 5: 
+                        # បើរកឈ្មោះមិនឃើញ គឺយកក្រឡាទី៦ (Index 5) ព្រោះវាជាទីតាំងលេខភ្លើងថ្មី
+                        last_electric_new = int(float(latest_row.iloc[5]))
+                        
+                    # ២. ស្វែងរកលេខទឹកថ្មី (Water New)
                     if 'Water New' in latest_row and pd.notna(latest_row['Water New']):
                         last_water_new = int(float(latest_row['Water New']))
+                    elif len(df.columns) > 8:
+                        # បើរកឈ្មោះមិនឃើញ គឺយកក្រឡាទី៩ (Index 8) ព្រោះវាជាទីតាំងលេខទឹកថ្មី
+                        last_water_new = int(float(latest_row.iloc[8]))
         except Exception:
-            pass 
+            pass
     return last_electric_new, last_water_new
 
 # --- អនុគមន៍កត់ត្រាទិន្នន័យ ---
@@ -117,7 +132,6 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
         try:
             df_existing = pd.read_csv(LOG_FILE, nrows=0)
             if len(df_existing.columns) != len(df_new.columns):
-                # ប្រសិនបើទម្រង់ជួរឈរខុសគ្នា វានឹងបង្កើតឯកសារថ្មីស្វ័យប្រវត្តិដើម្បីកុំឱ្យខូចទិន្នន័យ
                 df_new.to_csv(LOG_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
             else:
                 df_new.to_csv(LOG_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
@@ -164,7 +178,7 @@ if st.sidebar.button("🚪 ចាកចេញ (Logout)"):
 
 
 # =========================================================
-# 🍏 ផ្នែកកម្មវិធីចម្បង (ទម្រង់ចុះក្រោម គ្មាន Tabs)
+# 🍏 ផ្នែកកម្មវិធីចម្បង
 # =========================================================
 st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ ទឹក-អគ្គសនី")
 st.write("សូមបំពេញព័ត៌មានខាងក្រោមដើម្បីគណនាថ្លៃប្រាក់")
@@ -185,7 +199,7 @@ if id_user:
         st.success(f"👤 ឈ្មោះអតិថិជន៖ {existing_name}")
         customer_name = existing_name
         
-        # 🔥 ទាញយកលេខភ្លើង/ទឹកថ្មីពីខែមុន មកធ្វើជាតម្លៃ Default សម្រាប់ខែថ្មីភ្លាមៗនៅទីនេះ
+        # 🔥 ទាញយកលេខភ្លើង/ទឹកថ្មីពីខែមុន មកធ្វើជាតម្លៃ លេខចាស់ ស្វ័យប្រវត្ត
         default_elec_old, default_water_old = get_last_utility_readings(id_user)
     else:
         st.warning(f"⚠️ មិនទាន់មាន ID [{id_user}] នេះក្នុងប្រព័ន្ធទេ។ សូមបំពេញទម្រង់ខាងក្រោមដើម្បីចុះឈ្មោះ៖")
@@ -206,7 +220,6 @@ st.divider()
 
 # --- ⚡ ផ្នែកគណនាថ្លៃអគ្គសនី ---
 st.header("⚡ គណនាថ្លៃអគ្គសនី")
-# 💡 ប្រអប់លេខចាស់ នឹងទទួលបានតម្លៃលេខថ្មីពីខែមុនដោយស្វ័យប្រវត្តិ (value=int(default_elec_old))
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=int(default_elec_old), step=1, format="%d", key=f"old_elec_{suffix}")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0, step=1, format="%d", key=f"new_elec_{suffix}")
 
@@ -224,7 +237,6 @@ st.divider()
 
 # --- 💧 ផ្នែកគណនាថ្លៃទឹក ---
 st.header("💧 គណនាថ្លៃទឹកស្អាត")
-# 💡 ប្រអប់លេខចាស់ នឹងទទួលបានតម្លៃលេខថ្មីពីខែមុនដោយស្វ័យប្រវត្តិ (value=int(default_water_old))
 old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=int(default_water_old), step=1, format="%d", key=f"old_water_{suffix}")
 new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0, step=1, format="%d", key=f"new_water_{suffix}")
 
@@ -275,14 +287,12 @@ print_btn = """
 """
 components.html(print_btn, height=60)
 
-
 # =========================================================
-# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប (លាក់មិនឱ្យព្រីន)
+# 🛠️ ផ្នែកបង្ហាញទិន្នន័យ និងលុប
 # =========================================================
 no_print_area = st.container()
 with no_print_area:
     st.html("<style>@media print { div[data-testid='stVerticalBlock'] > div:last-child { display: none !important; } }</style>")
-    
     st.divider()
     st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
     
@@ -306,32 +316,3 @@ with no_print_area:
                         st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
         except Exception:
             st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាត។")
-    else:
-        st.info("មិនទាន់មានទិន្នន័យកត់ត្រានៅឡើយទេ។")
-        
-    st.divider()
-    
-    st.subheader("👥 បញ្ជីឈ្មោះអតិថិជនទាំងអស់")
-    if os.path.exists(CUSTOMER_FILE):
-        try:
-            df_cust = pd.read_csv(CUSTOMER_FILE, dtype={'User ID': str})
-            st.dataframe(df_cust)
-            
-            st.write("🔧 **ជ្រើសរើសលុបអតិថិជនណាម្នាក់ចោល៖**")
-            cust_ids = df_cust['User ID'].tolist()
-            selected_cust = st.selectbox("ជ្រើសរើស ID អតិថិជនដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + cust_ids)
-            
-            if selected_cust != "--- សូមជ្រើសរើស ---":
-                current_name = df_cust[df_cust['User ID'] == selected_cust].iloc[0]['Customer Name']
-                st.info(f"អតិថិជន៖ ID: {selected_cust} | ឈ្មោះ: {current_name}")
-                
-                cust_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបអតិថិជននេះ៖", type="password", key="p_cust")
-                if st.button("🗑️ លុបអតិថិជននេះចោល"):
-                    if cust_password == ADMIN_PASSWORD:
-                        if delete_single_customer(selected_cust):
-                            st.success(f"✅ បានលុបអតិថិជនរួចរាល់!")
-                            st.rerun()
-                    else:
-                        st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
-        except Exception:
-            st.error("⚠️ ឯកសារអតិថិជនមានទម្រង់ខូចខាត។")
