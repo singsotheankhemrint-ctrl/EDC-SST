@@ -1,3 +1,14 @@
+បាទបង! ខ្ញុំយល់ច្បាស់ហើយ គឺយើងចង់ផ្លាស់ប្តូរ និងរៀបចំលំដាប់លំដោយប្រអប់បញ្ចូលថ្មី៖
+
+កែប្រែឈ្មោះប្រអប់ "បំណុលចាស់ (រៀល)" ទៅជា "ថ្លៃចំណត (រៀល) =" វិញ។
+
+ផ្លាស់ទីប្រអប់នេះពីផ្នែកអគ្គសនី យកមកដាក់នៅក្រោមប្រអប់ "ថ្លៃបន្ទប់ (រៀល) =" នៅក្នុងផ្នែក "💰 ផ្នែកទូទាត់ប្រាក់សរុប" វិញ ដើម្បីឱ្យវាស្ថិតនៅក្នុងក្រុមតែមួយ។
+
+ខាងក្រោមនេះជាកូដពេញលេញដែលបានកែសម្រួលតាមការចង់បានរបស់បង៖
+
+Python
+
+
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -82,7 +93,7 @@ def get_last_utility_readings(user_id):
     return last_electric_new, last_water_new
 
 # --- អនុគមន៍កត់ត្រាទិន្នន័យ ---
-def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, room_fee, debt, grand_total, created_by):
+def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, water_old, water_new, water_total, room_fee, parking_fee, grand_total, created_by):
     new_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "User ID": str(user_id),
@@ -95,7 +106,7 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
         "Water New": int(water_new),
         "Water Total (៛)": int(water_total),
         "Room Fee (៛)": int(room_fee),
-        "ប្រាក់ជំពាក់ (៛)": int(debt),
+        "Parking Fee (៛)": int(parking_fee), # កែឈ្មោះក្រឡាទិន្នន័យក្នុង File CSV
         "Grand Total (៛)": int(grand_total),
         "Recorded By": created_by
     }
@@ -105,6 +116,7 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
         try:
             df_existing = pd.read_csv(LOG_FILE, nrows=0)
             if len(df_existing.columns) != len(df_new.columns):
+                # បើទម្រង់ជួរឈរខុសគ្នា វានឹងរៀបចំបង្កើតថ្មីស្វ័យប្រវត្តិ
                 df_new.to_csv(LOG_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
             else:
                 df_new.to_csv(LOG_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
@@ -192,15 +204,13 @@ st.divider()
 
 # --- ⚡ ផ្នែកគណនាថ្លៃអគ្គសនី ---
 st.header("⚡ គណនាថ្លៃអគ្គសនី")
-# 💡 បន្ថែម format="%d" ដើម្បីបង្ហាញសញ្ញាក្បៀសខណ្ឌ ៣ ខ្ទង់ម្តងនៅក្នុងប្រអប់បញ្ចូល
 old_num_electric = st.number_input("លេខថាមពលចាស់ (ភ្លើង) =", value=int(default_elec_old), step=1, format="%d", key=f"old_elec_{suffix}")
 new_num_electric = st.number_input("លេខថាមពលថ្មី (ភ្លើង) =", value=0, step=1, format="%d", key=f"new_elec_{suffix}")
-debt_electric = st.number_input("បំណុលចាស់ (រៀល) =", value=0, step=1, format="%d", key=f"debt_elec_{suffix}")
+# 💡 លុបប្រអប់បំណុលចាស់ចេញពីផ្នែកនេះហើយ
 
 used_electric = new_num_electric - old_num_electric
 
 if st.button("គណនាថ្លៃអគ្គសនី"):
-    # 💡 បន្ថែម {int(តម្លៃ):,} ដើម្បីឱ្យអក្សរលទ្ធផលមានសញ្ញាក្បៀស
     st.subheader(f"📊 ថាមពលប្រើប្រាស់សរុប = {int(used_electric):,} kwh")
     if used_electric <= 0:
         st.session_state['total_electric'] = 500
@@ -212,14 +222,12 @@ st.divider()
 
 # --- 💧 ផ្នែកគណនាថ្លៃទឹក ---
 st.header("💧 គណនាថ្លៃទឹកស្អាត")
-# 💡 បន្ថែម format="%d" ដើម្បីបង្ហាញសញ្ញាក្បៀសខណ្ឌ ៣ ខ្ទង់ម្តងនៅក្នុងប្រអប់បញ្ចូល
 old_num_water = st.number_input("លេខនាឡិកាចាស់ (ទឹក) =", value=int(default_water_old), step=1, format="%d", key=f"old_water_{suffix}")
 new_num_water = st.number_input("លេខនាឡិកាថ្មី (ទឹក) =", value=0, step=1, format="%d", key=f"new_water_{suffix}")
 
 used_water = new_num_water - old_num_water
 
 if st.button("គណនាថ្លៃទឹក"):
-    # 💡 បន្ថែម {int(តម្លៃ):,} ដើម្បីឱ្យអក្សរលទ្ធផលមានសញ្ញាក្បៀស
     st.subheader(f"📊 ចំនួនទឹកប្រើប្រាស់សរុប = {int(used_water):,} ម៉ែត្រគូប (m³)")
     st.session_state['total_water'] = int(used_water * 2000)
     st.info(f"💵 ទឹកប្រាក់ថ្លៃទឹកសរុប៖ {int(st.session_state['total_water']):,} ៛")
@@ -228,10 +236,11 @@ st.divider()
 
 # --- 💰 ផ្នែកទូទាត់ប្រាក់រួមបញ្ចូល ---
 st.header("💰 ផ្នែកទូទាត់ប្រាក់សរុប")
+# 💡 រៀបចំប្រអប់ ថ្លៃបន្ទប់ និង ថ្លៃចំណត នៅជាមួយគ្នាជាក្រុមចុះក្រោម
 room_fee = st.number_input("ថ្លៃបន្ទប់ (រៀល) =", value=0, step=1, format="%d", key=f"room_{suffix}")
+parking_fee = st.number_input("ថ្លៃចំណត (រៀល) =", value=0, step=1, format="%d", key=f"parking_{suffix}")
 
-total_money = int(st.session_state['total_electric']) + int(st.session_state['total_water']) + int(room_fee) + int(debt_electric)
-# 💡 បន្ថែម {total_money:,} ដើម្បីឱ្យការបង្ហាញប្រាក់សរុបមានសញ្ញាក្បៀសខណ្ឌច្បាស់លាស់
+total_money = int(st.session_state['total_electric']) + int(st.session_state['total_water']) + int(room_fee) + int(parking_fee)
 st.success(f"💵 Total ទឹកប្រាក់សរុបនៅថ្ងៃនេះ៖ {total_money:,} ៛")
 
 # កន្លែងចុចរក្សាទុកទិន្នន័យ និង Reset ទៅសភាពដើមវិញ
@@ -241,7 +250,7 @@ if st.button("💾 រក្សាទុកការកត់ត្រានេ�
             id_user, customer_name, date_line, 
             old_num_electric, new_num_electric, st.session_state['total_electric'], 
             old_num_water, new_num_water, st.session_state['total_water'], 
-            room_fee, debt_electric, total_money, st.session_state['current_user']
+            room_fee, parking_fee, total_money, st.session_state['current_user']
         )
         st.success("✅ បានកត់ត្រាទិន្នន័យរួចរាល់!")
         
