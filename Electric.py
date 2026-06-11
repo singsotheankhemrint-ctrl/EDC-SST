@@ -270,46 +270,46 @@ if menu == "🧮 គណនាវិក្កយបត្រ":
 
     st.divider()
 
-    # --- 🖨️ ផ្ទាំងបង្ហាញទម្រង់វិក្កយបត្រផ្លូវការ (លុបពាក្យ "ជួរទី..." ចេញរួចរាល់) ---
+    # --- 🖨️ ផ្ទាំងបង្ហាញទម្រង់វិក្កយបត្រផ្លូវការ ---
     st.subheader("🖨️ ទម្រង់សម្រាប់បោះពុម្ពវិក្កយបត្រ")
     
     invoice_template = f"""
-    <div class="print-container" style="font-family: 'Khmer OS Battambang', Arial, sans-serif; padding: 25px; border: 2px solid #000; max-width: 450px; background-color: #fff; color: #000; line-height: 2.0; margin: 0 auto; border-radius: 8px;">
-        <h2 style="text-align: center; margin-top: 0; margin-bottom: 5px; font-weight: bold;">វិក្កយបត្រប្រចាំខែ</h2>
-        <div style="text-align: center; font-size: 13px; margin-bottom: 15px; color: #444;">កាលបរិច្ឆេទ៖ {date_line}</div>
-        <hr style="border: 0.5px solid #000; margin-bottom: 15px;">
+    <div class="print-invoice-card" style="font-family: 'Khmer OS Battambang', Arial, sans-serif; padding: 20px; border: 2px solid #000; max-width: 440px; background-color: #fff; color: #000; line-height: 1.8; margin: 0 auto; border-radius: 8px; box-sizing: border-box;">
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 5px; font-weight: bold; font-size: 22px;">វិក្កយបត្រប្រចាំខែ</h2>
+        <div style="text-align: center; font-size: 13px; margin-bottom: 10px; color: #444;">កាលបរិច្ឆេទ៖ {date_line}</div>
+        <hr style="border: 0.5px solid #000; margin-bottom: 10px;">
         
-        <div style="font-size: 16px; margin-bottom: 8px;">
+        <div style="font-size: 15px; margin-bottom: 8px;">
             <strong>អតិថិជន៖</strong> {id_user} &nbsp;&nbsp; {customer_name if customer_name else '..................................'}
         </div>
         
-        <div style="font-size: 15px; margin-bottom: 4px;">
-            <strong>លេខភ្លើង៖</strong> ចាស់: {old_num_electric} &nbsp;&nbsp; ថ្មី: {new_num_electric} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_electric} kWh
+        <div style="font-size: 14px; margin-bottom: 2px;">
+            <strong>លេខភ្លើង៖</strong> ចាស់: {old_num_electric} &nbsp;&nbsp; ថ្មី: {new_num_electric} &nbsp;&nbsp; ប្រើប្រាស់: {used_electric} kWh
         </div>
-        <div style="font-size: 15px; margin-bottom: 12px; padding-left: 15px; color: #111;">
+        <div style="font-size: 14px; margin-bottom: 8px; padding-left: 15px;">
             ➔ ប្រាក់ថ្លៃភ្លើងសរុប: <span style="font-weight: bold;">{int(st.session_state['total_electric']):,} ៛</span>
         </div>
         
-        <div style="font-size: 15px; margin-bottom: 4px;">
-            <strong>លេខទឹក៖</strong> ចាស់: {old_num_water} &nbsp;&nbsp; ថ្មី: {new_num_water} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_water} m³
+        <div style="font-size: 14px; margin-bottom: 2px;">
+            <strong>លេខទឹក៖</strong> ចាស់: {old_num_water} &nbsp;&nbsp; ថ្មី: {new_num_water} &nbsp;&nbsp; ប្រើប្រាស់: {used_water} m³
         </div>
-        <div style="font-size: 15px; margin-bottom: 12px; padding-left: 15px; color: #111;">
+        <div style="font-size: 14px; margin-bottom: 8px; padding-left: 15px;">
             ➔ ប្រាក់ថ្លៃទឹកសរុប: <span style="font-weight: bold;">{int(st.session_state['total_water']):,} ៛</span>
         </div>
         
-        <hr style="border: 0.5px dashed #555; margin: 15px 0;">
+        <hr style="border: 0.5px dashed #555; margin: 10px 0;">
         
-        <div style="font-size: 15px; margin-bottom: 8px;">
+        <div style="font-size: 14px; margin-bottom: 8px;">
             <strong>ថ្លៃផ្ទះ៖</strong> {int(room_fee):,} ៛ &nbsp;&nbsp;&nbsp;&nbsp; <strong>ថ្លៃចំណត៖</strong> {int(parking_fee):,} ៛
         </div>
         
-        <div style="font-size: 18px; margin-top: 15px; padding: 8px; background-color: #f2f2f2; border-radius: 4px; text-align: center;">
+        <div style="font-size: 16px; margin-top: 10px; padding: 6px; background-color: #f2f2f2; border-radius: 4px; text-align: center;">
             <strong>ប្រាក់សរុបរួម៖ <span style="color: #d32f2f;">{total_money:,} ៛</span></strong>
         </div>
     </div>
     """
     
-    st.components.v1.html(invoice_template, height=360)
+    st.components.v1.html(invoice_template, height=420)
 
     # ប៊ូតុងបញ្ជាឱ្យព្រីន (Print Button)
     print_btn = """
@@ -317,7 +317,7 @@ if menu == "🧮 គណនាវិក្កយបត្រ":
         .btn-print {
             background-color: #04AA6D; border: none; color: white; padding: 12px 28px;
             text-align: center; text-decoration: none; display: block;
-            font-size: 16px; margin: 10px auto; cursor: pointer; border-radius: 8px;
+            font-size: 16px; margin: 5px auto; cursor: pointer; border-radius: 8px;
             font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .btn-print:hover { background-color: #03925e; }
@@ -326,52 +326,54 @@ if menu == "🧮 គណនាវិក្កយបត្រ":
     """
     components.html(print_btn, height=60)
 
-    # 🛠️ ផ្នែក CSS លាក់បរិវេណជុំវិញទាំងអស់ពេលព្រីន (Print Area Optimization)
-    no_print_area = st.container()
-    with no_print_area:
-        st.html("""
-        <style>
-            @media print {
-                /* លាក់ Sidebar, Buttons, Headers, Footers របស់ Streamlit ទាំងអស់ */
-                section[data-testid="stSidebar"], 
-                header, 
-                footer, 
-                div.stButton, 
-                div[data-testid="stBlock"] > div:not(.print-container) { 
-                    display: none !important; 
-                }
-                /* បង្ខំឱ្យបង្ហាញតែទម្រង់វិក្កយបត្រប៉ុណ្ណោះ */
-                div.print-container {
-                    border: none !important;
-                    margin: 0px auto !important;
-                    padding: 0px !important;
-                }
+    # 🛠️ ផ្នែក CSS ពិសេស៖ បញ្ជាឱ្យលាក់រាល់អ្វីៗទាំងអស់លើអេក្រង់ពេលព្រីន លើកលែងតែសន្លឹកវិក្កយបត្រ
+    st.html("""
+    <style>
+        @media print {
+            /* លាក់រចនាសម្ព័ន្ធកម្មវិធី Streamlit ទាំងអស់រួមទាំង Sidebar, Buttons, Headers ទាំងស្រុង */
+            header, footer, [data-testid="stSidebar"], .stApp.element-container,
+            div.stButton, div.stMarkdown, div.stDivider, div.stBlock,
+            iframe {
+                display: none !important;
             }
-        </style>
-        """)
-        st.divider()
-        st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
-        
-        if os.path.exists(LOG_FILE):
-            try:
-                df_logs = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
-                st.dataframe(df_logs)
-                
-                st.write("🔧 **ជ្រើសរើសលុបទិន្នន័យកត់ត្រាណាមួយចោល៖**")
-                log_timestamps = df_logs['Timestamp'].tolist() if 'Timestamp' in df_logs.columns else []
-                selected_log = st.selectbox("ជ្រើសរើស ថ្ងៃខែខ្សែកត់ត្រា ដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + log_timestamps)
-                
-                if selected_log != "--- សូមជ្រើសរើស ---":
-                    log_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបប្រវត្តិនេះ៖", type="password", key="p_log")
-                    if st.button("🗑️ លុបប្រវត្តិនេះចោល"):
-                        if log_password == ADMIN_PASSWORD:
-                            if delete_single_log(selected_log):
-                                st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
-                                st.rerun()
-                        else:
-                            st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
-            except Exception:
-                st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាតខ្លាំង។")
+            
+            /* បង្ខំឱ្យបង្ហាញតែ iFrame ណាដែលមានផ្ទុកសន្លឹកវិក្កយបត្រ */
+            iframe[title="streamlit_components.v1.html"] {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                height: auto !important;
+                visibility: visible !important;
+            }
+        }
+    </style>
+    """)
+    
+    st.divider()
+    st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
+    
+    if os.path.exists(LOG_FILE):
+        try:
+            df_logs = pd.read_csv(LOG_FILE, dtype=str, on_bad_lines='skip')
+            st.dataframe(df_logs)
+            
+            st.write("🔧 **ជ្រើសរើសលុបទិន្នន័យកត់ត្រាណាមួយចោល៖**")
+            log_timestamps = df_logs['Timestamp'].tolist() if 'Timestamp' in df_logs.columns else []
+            selected_log = st.selectbox("ជ្រើសរើស ថ្ងៃខែខ្សែកត់ត្រា ដែលចង់លុប៖", ["--- សូមជ្រើសរើស ---"] + log_timestamps)
+            
+            if selected_log != "--- សូមជ្រើសរើស ---":
+                log_password = st.text_input("បញ្ចូលពាក្យសម្ងាត់ Admin ដើម្បីលុបប្រវត្តិនេះ៖", type="password", key="p_log")
+                if st.button("🗑️ លុបប្រវត្តិនេះចោល"):
+                    if log_password == ADMIN_PASSWORD:
+                        if delete_single_log(selected_log):
+                            st.success(f"✅ បានលុបប្រវត្តិកត់ត្រារួចរាល់!")
+                            st.rerun()
+                    else:
+                        st.error("❌ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ!")
+        except Exception:
+            st.error("⚠️ ឯកសារប្រវត្តិកត់ត្រាចាស់មានទម្រង់ខូចខាតខ្លាំង។")
 
 # =========================================================
 # 📉 ផ្នែកកម្មវិធី៖ កត់ត្រាការចំណាយ (Expense)
