@@ -121,7 +121,6 @@ def log_data(user_id, user_name, date_line, elec_old, elec_new, elec_total, wate
     df_new = pd.DataFrame([new_data])
     if os.path.exists(LOG_FILE):
         try:
-            df_existing = pd.read_csv(LOG_FILE, nrows=0)
             df_new.to_csv(LOG_FILE, mode='a', header=False, index=False, encoding='utf-8-sig')
         except Exception:
             df_new.to_csv(LOG_FILE, mode='w', header=True, index=False, encoding='utf-8-sig')
@@ -179,7 +178,7 @@ if st.sidebar.button("🚪 ចាកចេញ (Logout)"):
 menu = st.sidebar.selectbox("📂 ជ្រើសរើសផ្នែកការងារ", ["🧮 គណនាវិក្កយបត្រ", "📉 កត់ត្រាការចំណាយ", "📊 របាយការណ៍ និងប្រាក់ចំណេញ"])
 
 # =========================================================
-# 🍏 ផ្នែកកម្មវិធីចម្បង៖ គណនាវិក្កយបត្រ
+# 🧮 ផ្នែកកម្មវិធីចម្បង៖ គណនាវិក្កយបត្រ
 # =========================================================
 if menu == "🧮 គណនាវិក្កយបត្រ":
     st.title("🍏 ⚡ ប្រព័ន្ធគណនាទិន្នន័យ ទឹក-អគ្គសនី")
@@ -271,39 +270,85 @@ if menu == "🧮 គណនាវិក្កយបត្រ":
 
     st.divider()
 
-    # --- 🖨️ ផ្នែកទម្រង់បង្ហាញសម្រាប់ព្រីនវិក្កយបត្រ (Invoice Print Layout) ---
+    # --- 🖨️ ផ្ទាំងបង្ហាញទម្រង់វិក្កយបត្រផ្លូវការ (លុបពាក្យ "ជួរទី..." ចេញរួចរាល់) ---
     st.subheader("🖨️ ទម្រង់សម្រាប់បោះពុម្ពវិក្កយបត្រ")
     
     invoice_template = f"""
-    <div style="font-family: 'Khmer OS Battambang', Arial, sans-serif; padding: 20px; border: 1px solid #ccc; max-width: 450px; background-color: #fff; color: #000; line-height: 1.8;">
-        <h3 style="text-align: center; margin-top: 0;">វិក្កយបត្រប្រចាំខែ</h3>
-        <hr style="border: 0.5px solid #000;">
-        <div><strong>ជួរទី១៖</strong> {id_user} &nbsp;&nbsp;&nbsp;&nbsp; {customer_name if customer_name else '......................'}</div>
-        <div><strong>ជួរទី២៖</strong> លេខភ្លើងចាស់: {old_num_electric} &nbsp;&nbsp; លេខភ្លើងថ្មី: {new_num_electric} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_electric} kWh</div>
-        <div><strong>ជួរទីបី៖</strong> ប្រាក់ថ្លៃភ្លើងសរុប: {int(st.session_state['total_electric']):,} ៛</div>
-        <div><strong>ជួរទីបួន៖</strong> លេខទឹកចាស់: {old_num_water} &nbsp;&nbsp; លេខទឹកថ្មី: {new_num_water} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_water} m³</div>
-        <div><strong>ជួរទីប្រាំ៖</strong> ប្រាក់ថ្លៃទឹកសរុប: {int(st.session_state['total_water']):,} ៛</div>
-        <div><strong>ជួរបន្ទាប់៖</strong> ថ្លៃផ្ទះ: {int(room_fee):,} ៛ &nbsp;&nbsp; ថ្លៃចំណត: {int(parking_fee):,} ៛ &nbsp;&nbsp; ប្រាក់សរុបរួម: <span style="font-weight: bold; font-size: 1.1em;">{total_money:,} ៛</span></div>
-        <hr style="border: 0.5px dashed #000;">
-        <div style="text-align: center; font-size: 12px;">កាលបរិច្ឆេទបញ្ចេញវិក្កយបត្រ៖ {date_line}</div>
+    <div class="print-container" style="font-family: 'Khmer OS Battambang', Arial, sans-serif; padding: 25px; border: 2px solid #000; max-width: 450px; background-color: #fff; color: #000; line-height: 2.0; margin: 0 auto; border-radius: 8px;">
+        <h2 style="text-align: center; margin-top: 0; margin-bottom: 5px; font-weight: bold;">វិក្កយបត្រប្រចាំខែ</h2>
+        <div style="text-align: center; font-size: 13px; margin-bottom: 15px; color: #444;">កាលបរិច្ឆេទ៖ {date_line}</div>
+        <hr style="border: 0.5px solid #000; margin-bottom: 15px;">
+        
+        <div style="font-size: 16px; margin-bottom: 8px;">
+            <strong>អតិថិជន៖</strong> {id_user} &nbsp;&nbsp; {customer_name if customer_name else '..................................'}
+        </div>
+        
+        <div style="font-size: 15px; margin-bottom: 4px;">
+            <strong>លេខភ្លើង៖</strong> ចាស់: {old_num_electric} &nbsp;&nbsp; ថ្មី: {new_num_electric} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_electric} kWh
+        </div>
+        <div style="font-size: 15px; margin-bottom: 12px; padding-left: 15px; color: #111;">
+            ➔ ប្រាក់ថ្លៃភ្លើងសរុប: <span style="font-weight: bold;">{int(st.session_state['total_electric']):,} ៛</span>
+        </div>
+        
+        <div style="font-size: 15px; margin-bottom: 4px;">
+            <strong>លេខទឹក៖</strong> ចាស់: {old_num_water} &nbsp;&nbsp; ថ្មី: {new_num_water} &nbsp;&nbsp; ប្រើប្រាស់សរុប: {used_water} m³
+        </div>
+        <div style="font-size: 15px; margin-bottom: 12px; padding-left: 15px; color: #111;">
+            ➔ ប្រាក់ថ្លៃទឹកសរុប: <span style="font-weight: bold;">{int(st.session_state['total_water']):,} ៛</span>
+        </div>
+        
+        <hr style="border: 0.5px dashed #555; margin: 15px 0;">
+        
+        <div style="font-size: 15px; margin-bottom: 8px;">
+            <strong>ថ្លៃផ្ទះ៖</strong> {int(room_fee):,} ៛ &nbsp;&nbsp;&nbsp;&nbsp; <strong>ថ្លៃចំណត៖</strong> {int(parking_fee):,} ៛
+        </div>
+        
+        <div style="font-size: 18px; margin-top: 15px; padding: 8px; background-color: #f2f2f2; border-radius: 4px; text-align: center;">
+            <strong>ប្រាក់សរុបរួម៖ <span style="color: #d32f2f;">{total_money:,} ៛</span></strong>
+        </div>
     </div>
     """
     
-    st.components.v1.html(invoice_template, height=320)
+    st.components.v1.html(invoice_template, height=360)
 
+    # ប៊ូតុងបញ្ជាឱ្យព្រីន (Print Button)
     print_btn = """
-    <button onclick="window.parent.print()" style="
-        background-color: #4CAF50; border: none; color: white; padding: 10px 24px;
-        text-align: center; text-decoration: none; display: inline-block;
-        font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;
-    ">🖨️ ចុចព្រីន (Print វិក្កយបត្រ)</button>
+    <style>
+        .btn-print {
+            background-color: #04AA6D; border: none; color: white; padding: 12px 28px;
+            text-align: center; text-decoration: none; display: block;
+            font-size: 16px; margin: 10px auto; cursor: pointer; border-radius: 8px;
+            font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-print:hover { background-color: #03925e; }
+    </style>
+    <button onclick="window.parent.print()" class="btn-print">🖨️ បោះពុម្ពវិក្កយបត្រ (Print Invoice)</button>
     """
     components.html(print_btn, height=60)
 
-    # ផ្នែកគ្រប់គ្រងទិន្នន័យ (លាក់ពេលព្រីន)
+    # 🛠️ ផ្នែក CSS លាក់បរិវេណជុំវិញទាំងអស់ពេលព្រីន (Print Area Optimization)
     no_print_area = st.container()
     with no_print_area:
-        st.html("<style>@media print { div[data-testid='stVerticalBlock'] > div:last-child, button, header, footer { display: none !important; } }</style>")
+        st.html("""
+        <style>
+            @media print {
+                /* លាក់ Sidebar, Buttons, Headers, Footers របស់ Streamlit ទាំងអស់ */
+                section[data-testid="stSidebar"], 
+                header, 
+                footer, 
+                div.stButton, 
+                div[data-testid="stBlock"] > div:not(.print-container) { 
+                    display: none !important; 
+                }
+                /* បង្ខំឱ្យបង្ហាញតែទម្រង់វិក្កយបត្រប៉ុណ្ណោះ */
+                div.print-container {
+                    border: none !important;
+                    margin: 0px auto !important;
+                    padding: 0px !important;
+                }
+            }
+        </style>
+        """)
         st.divider()
         st.subheader("📋 ប្រវត្តិនៃការកត់ត្រាទិន្នន័យកន្លងមក")
         
@@ -362,7 +407,6 @@ elif menu == "📊 របាយការណ៍ និងប្រាក់ចំ
     st.write("ទិន្នន័យគណនាដោយស្វ័យប្រវត្តិចេញពីប្រព័ន្ធលក់ និងការចំណាយ")
     st.divider()
 
-    # ទាញយកទិន្នន័យចំណូល
     total_income_dict = {}
     if os.path.exists(LOG_FILE):
         df_logs = pd.read_csv(LOG_FILE)
@@ -371,7 +415,6 @@ elif menu == "📊 របាយការណ៍ និងប្រាក់ចំ
             for idx, row in df_income_grouped.iterrows():
                 total_income_dict[row['Month']] = row['Grand Total (៛)']
 
-    # ទាញយកទិន្នន័យចំណាយ
     total_expense_dict = {}
     if os.path.exists(EXPENSE_FILE):
         df_exp = pd.read_csv(EXPENSE_FILE)
@@ -380,7 +423,6 @@ elif menu == "📊 របាយការណ៍ និងប្រាក់ចំ
             for idx, row in df_exp_grouped.iterrows():
                 total_expense_dict[row['Month']] = row['Amount (៛)']
 
-    # រៀបចំបង្កើតតារាងរបាយការណ៍រួមសរុប (Merged Months)
     all_months = sorted(list(set(list(total_income_dict.keys()) + list(total_expense_dict.keys()))))
     
     report_data = []
@@ -397,8 +439,6 @@ elif menu == "📊 របាយការណ៍ និងប្រាក់ចំ
 
     if report_data:
         df_report = pd.DataFrame(report_data)
-        
-        # បង្ហាញជាផ្ទាំងលេចធ្លោ (Metrics Layout)
         latest_row = df_report.iloc[-1]
         st.subheader(f"📈 សង្ខេបស្ថានភាពហិរញ្ញវត្ថុក្នុងខែចុងក្រោយ ({latest_row['ខែ-ឆ្នាំ (Month)']})")
         col1, col2, col3 = st.columns(3)
