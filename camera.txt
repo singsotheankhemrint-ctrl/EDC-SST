@@ -1,0 +1,27 @@
+Python 3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)] on win32
+Enter "help" below or click "Help" above for more information.
+>>> from flask import Flask, Response
+... import cv2
+... 
+... app = Flask(__name__)
+... 
+... camera = cv2.VideoCapture("http://192.168.1.4:8080/video")
+... 
+... def get_frame():
+...     while True:
+...         success, frame = camera.read()
+...         if not success:
+...             break
+...         _, buffer = cv2.imencode('.jpg', frame)
+...         yield (b'--frame\r\n'
+...                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+... 
+... @app.route('/')
+... def index():
+...     return "<h1>IP Camera Stream</h1><img src='/video_feed' width='640'>"
+... 
+... @app.route('/video_feed')
+... def video_feed():
+...     return Response(get_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
+... 
+... if __name__ == '__main__':
