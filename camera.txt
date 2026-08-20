@@ -1,1 +1,27 @@
+from flask import Flask, Response
+import cv2
 
+app = Flask(__name__)
+
+# កែត្រង់នេះ៖ ត្រូវមានសញ្ញាសម្រង់ "" និងថែម /video នៅពីក្រោយ
+camera = cv2.VideoCapture("http://192.168.1.4:8080/video")
+
+def get_frame():
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        _, buffer = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+@app.route('/')
+def index():
+    return "<h1>IP Camera Stream</h1><img src='/video_feed' width='640'>"
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(get_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
